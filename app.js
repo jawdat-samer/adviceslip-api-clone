@@ -9,6 +9,8 @@ const compression = require('compression');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
+const adviceRouter = require('./routes/adviceRoutes');
+
 const app = express();
 
 app.use(cors());
@@ -41,6 +43,8 @@ app.use(hpp());
 app.use(xss());
 
 app.use(compression());
+
+app.use('/api/v1/advices', adviceRouter);
 
 app.all('*', (req, res, next) => {
   return next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

@@ -1,0 +1,9 @@
+model Advice {
+  id      Int    @id @default(autoincrement())
+  content String @db.Text
+}
+
+model AdviceCounter {
+  id      Int @id @default(autoincrement())
+  counter Int @db.Int
+}
