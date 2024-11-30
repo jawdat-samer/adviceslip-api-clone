@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const sendEmail = require('../utils/email');
 
 const prisma = new PrismaClient();
 
@@ -145,18 +146,125 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(new AppError(`You don't have permission to perform this action!`, 403));
+    }
+
+    next();
+  };
+};
+
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   const data = req.validatedData;
 
-  const checkEmail = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       email: data.email,
     },
   });
 
-  if (!checkEmail) return next(new AppError('There is no account with this email', 404));
+  if (!user) return next(new AppError('There is no account with this email', 404));
 
   const [resetToken, hashedResetToken] = createNewResetToken();
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      passwordResetToken: hashedResetToken,
+      passwordResetExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    },
+  });
+
+  const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
+  const message = `
+    <p>
+      Forgot your password? Submit a PATCH request with your new password and
+      passwordConfirm to <a href="${resetUrl}">Reset link</a>.
+    </p>
+    <p>
+      If you didn't forget your password, please ignore this email!
+    </p>
+  `;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token (Valid for 15 min)',
+      message: message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Reset token sent to email',
+    });
+  } catch (err) {
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+      },
+    });
+
+    return next(new AppError('There was an error sending the email. Try again later!', 500));
+  }
 });
 
-exports.resetPassword = catchAsync(async (req, res, next) => {});
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  data.resetToken = crypto.createHash('sha256').update(data.resetToken).digest('hex');
+
+  const user = await prisma.user.findFirst({
+    where: {
+      passwordResetToken: data.resetToken,
+    },
+  });
+
+  if (!user) return next(new AppError('Incorrect reset token URL! Try again later with new reset token.', 400));
+
+  const resetTokenTimestamp = Number.parseInt(user.passwordResetExpiresAt, 10);
+
+  if (Date.now() > resetTokenTimestamp) {
+    return next(new AppError('Reset token expired! Try again later with new reset token.', 400));
+  }
+
+  data.password = await bcrypt.hash(data.password, 12);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: data.password,
+      passwordUpdatedAt: new Date(Date.now()),
+      passwordResetToken: null,
+      passwordResetExpiresAt: null,
+    },
+  });
+
+  const token = signNewToken(res, user.id);
+
+  res.status(200).json({
+    status: 'success',
+    token: token,
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: req.user.id,
+    },
+  });
+
+  data.password = await bcrypt.hash(data.password, 12);
+});

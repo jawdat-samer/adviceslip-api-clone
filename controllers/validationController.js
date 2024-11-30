@@ -10,7 +10,6 @@ const formatter = ({ msg }) => {
 exports.checkValidation = (req, res, next) => {
   const validation = validationResult(req).formatWith(formatter);
   if (!validation.isEmpty()) {
-    console.log('test');
     return res.status(400).json({
       status: 'fail',
       errors: validation.mapped({ onlyFirstError: true }),
@@ -82,6 +81,45 @@ exports.login = [
     .withMessage('Password is required')
     .isLength({ min: 1, max: 300 })
     .withMessage('Password is too long!'),
+];
+
+exports.forgotPassword = [
+  body('email')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Email is required!')
+    .isEmail()
+    .withMessage('Email not valid!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Email is too long!'),
+];
+
+exports.resetPassword = [
+  param('resetToken').trim().escape().notEmpty().withMessage('Invalid reset token!'),
+  body('password')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Password is required')
+    .isStrongPassword({ minLength: 8, minLowercase: 0, minNumbers: 0, minSymbols: 0, minUppercase: 0 })
+    .withMessage('Password must be at least 8 characters')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Password is too long!'),
+  body('passwordConfirm')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Confirm your password!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Password Confirm is too long!')
+    .custom((value, { req }) => {
+      if (value === req.body.password) {
+        return true;
+      } else {
+        throw new Error('Passwords did not match!');
+      }
+    }),
 ];
 // Validation auth@end
 
