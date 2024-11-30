@@ -1,0 +1,17 @@
+model User {
+  id                     Int       @id @default(autoincrement())
+  name                   String    @db.VarChar(300)
+  email                  String    @unique @db.VarChar(300)
+  photo                  String    @default("default.png") @db.VarChar(300)
+  password               String    @db.VarChar(300)
+  passwordUpdatedAt      DateTime  @default(now()) @db.DateTime(3)
+  passwordResetToken     String?   @db.VarChar(300)
+  passwordResetExpiresAt DateTime? @db.DateTime(3)
+  role                   Role      @default(author)
+  isActive               Boolean   @default(true)
+}
+
+enum Role {
+  author
+  admin
+}

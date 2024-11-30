@@ -30,7 +30,24 @@ exports.createAdvice = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getAdvice = catchAsync(async (req, res, next) => {});
+exports.getAdvice = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  const advice = await prisma.advice.findUnique({
+    where: {
+      id: data.adviceID,
+    },
+  });
+
+  if (!advice) return next(new AppError('Advice not found!', 404));
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      advice: advice,
+    },
+  });
+});
 
 exports.getRandomAdvice = catchAsync(async (req, res, next) => {
   const adviceCounter = await prisma.adviceCounter.findFirst({
@@ -55,6 +72,8 @@ exports.getRandomAdvice = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: 'success',
-    message: advice,
+    data: {
+      advice: advice,
+    },
   });
 });
