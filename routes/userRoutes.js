@@ -8,13 +8,17 @@ const router = express.Router();
 router.post('/signup', validationController.signup, validationController.checkValidation, authController.signup);
 router.post('/login', validationController.login, validationController.checkValidation, authController.login);
 
-router.get('/', authController.protect, (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    data: {
-      user: req.user,
-    },
-  });
-});
+router.post(
+  '/forgotPassword',
+  validationController.forgotPassword,
+  validationController.checkValidation,
+  authController.forgotPassword
+);
+router.patch(
+  '/resetPassword/:resetToken',
+  validationController.resetPassword,
+  validationController.checkValidation,
+  authController.resetPassword
+);
 
 module.exports = router;
