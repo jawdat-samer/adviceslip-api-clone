@@ -21,4 +21,26 @@ router.patch(
   authController.resetPassword
 );
 
+router.use(authController.protect);
+
+router.get('/me', userController.getMe);
+router.patch('/updateMe', validationController.updateMe, validationController.checkValidation, userController.updateMe);
+router.patch(
+  '/updatePassword',
+  validationController.updatePassword,
+  validationController.checkValidation,
+  authController.updatePassword
+);
+router.delete(
+  '/deleteMe',
+  validationController.deleteMe,
+  validationController.checkValidation,
+  userController.deleteMe
+);
+
+router.use(authController.restrictTo('admin'));
+
+router.get('/', validationController.getAllUsers, validationController.checkValidation, userController.getAllUser);
+router.get('/:userId', validationController.getUser, validationController.checkValidation, userController.getUser);
+
 module.exports = router;

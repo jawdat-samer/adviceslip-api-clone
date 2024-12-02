@@ -101,11 +101,12 @@ exports.logout = (req, res) => {
 
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearar')) {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies && req.cookies.jwt) {
-    token = req.cookies.jwt;
   }
+  // else if (req.cookies && req.cookies.jwt) {
+  //   token = req.cookies.jwt;
+  // }
 
   if (!token) {
     return next(new AppError('Login to get access!', 401));
@@ -266,5 +267,28 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
     },
   });
 
+  const confirmOldPassword = await bcrypt.compare(data.oldPassword, user.password);
+
+  if (!confirmOldPassword) {
+    return next(AppError('Wrong old password!', 401));
+  }
+
   data.password = await bcrypt.hash(data.password, 12);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: data.password,
+      passwordUpdatedAt: new Date(Date.now()),
+    },
+  });
+
+  const token = signNewToken(res, user.id);
+
+  res.status(200).json({
+    status: 'success',
+    token: token,
+  });
 });
