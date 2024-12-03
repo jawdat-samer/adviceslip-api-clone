@@ -4,50 +4,7 @@ const catchAsync = require('../utils/catchAsync');
 
 const prisma = new PrismaClient();
 
-exports.createAdvice = catchAsync(async (req, res, next) => {
-  const data = req.validatedData;
-
-  const advice = await prisma.advice.create({
-    data: {
-      content: data.content,
-    },
-  });
-
-  await prisma.adviceCounter.update({
-    where: {
-      id: 1,
-    },
-    data: {
-      counter: advice.id,
-    },
-  });
-
-  res.status(201).json({
-    status: 'success',
-    data: {
-      advice: advice,
-    },
-  });
-});
-
-exports.getAdvice = catchAsync(async (req, res, next) => {
-  const data = req.validatedData;
-
-  const advice = await prisma.advice.findUnique({
-    where: {
-      id: data.adviceID,
-    },
-  });
-
-  if (!advice) return next(new AppError('Advice not found!', 404));
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      advice: advice,
-    },
-  });
-});
+exports.getAllAdvice = catchAsync(async (req, res, next) => {});
 
 exports.getRandomAdvice = catchAsync(async (req, res, next) => {
   const adviceCounter = await prisma.adviceCounter.findFirst({
@@ -77,3 +34,52 @@ exports.getRandomAdvice = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.getAdvice = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  const advice = await prisma.advice.findUnique({
+    where: {
+      id: data.adviceID,
+    },
+  });
+
+  if (!advice) return next(new AppError('Advice not found!', 404));
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      advice: advice,
+    },
+  });
+});
+
+exports.createAdvice = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  const advice = await prisma.advice.create({
+    data: {
+      content: data.content,
+    },
+  });
+
+  await prisma.adviceCounter.update({
+    where: {
+      id: 1,
+    },
+    data: {
+      counter: advice.id,
+    },
+  });
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      advice: advice,
+    },
+  });
+});
+
+exports.updateAdvice = catchAsync(async (req, res, next) => {});
+
+exports.deleteAdvice = catchAsync(async (req, res, next) => {});
