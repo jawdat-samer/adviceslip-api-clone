@@ -132,6 +132,84 @@ exports.getAllUsers = [
 
 exports.getUser = [param('userId').trim().escape().notEmpty().withMessage('User ID is required!').toInt()];
 
+exports.createUser = [
+  body('name')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Name is required!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Name is too long!'),
+  body('email')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Email is required!')
+    .isEmail()
+    .withMessage('Email not valid!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('email is too long!'),
+  body('password')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Password is required')
+    .isStrongPassword({ minLength: 8, minLowercase: 0, minNumbers: 0, minSymbols: 0, minUppercase: 0 })
+    .withMessage('Password must be at least 8 characters')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Password is too long!'),
+  body('role')
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('role is required!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('role is too long!'),
+];
+
+exports.updateUser = [
+  param('userId').trim().escape().toInt().notEmpty().withMessage('User ID is not valid!'),
+  body('name')
+    .optional()
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Name is required!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Name is too long!'),
+  body('email')
+    .optional()
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Email is required!')
+    .isEmail()
+    .withMessage('Email not valid!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('email is too long!'),
+  body('password')
+    .optional()
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('Password is required')
+    .isStrongPassword({ minLength: 8, minLowercase: 0, minNumbers: 0, minSymbols: 0, minUppercase: 0 })
+    .withMessage('Password must be at least 8 characters')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('Password is too long!'),
+  body('role')
+    .optional()
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage('role is required!')
+    .isLength({ min: 1, max: 300 })
+    .withMessage('role is too long!'),
+  body('active').trim().escape().notEmpty().toBoolean().withMessage('active status is required!'),
+];
+
+exports.deleteUser = [param('userId').trim().escape().toInt().notEmpty().withMessage('User ID is not valid!')];
+
 exports.updateMe = [
   body('name')
     .optional()

@@ -42,5 +42,18 @@ router.use(authController.restrictTo('admin'));
 
 router.get('/', validationController.getAllUsers, validationController.checkValidation, userController.getAllUser);
 router.get('/:userId', validationController.getUser, validationController.checkValidation, userController.getUser);
+router.post('/', validationController.createUser, validationController.checkValidation, userController.createUser);
+router.patch(
+  '/:userId',
+  validationController.updateUser,
+  validationController.checkValidation,
+  userController.updateUser
+);
+router.delete(
+  '/:userId',
+  validationController.deleteUser,
+  validationController.checkValidation,
+  userController.deleteUser
+);
 
 module.exports = router;

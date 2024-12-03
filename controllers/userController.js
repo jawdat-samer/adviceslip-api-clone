@@ -46,7 +46,7 @@ exports.getAllUser = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     results: users.length,
-    pages: availableResults > 0 ? availableResults / paginationOptions.take : availableResults,
+    pages: availableResults > 0 ? Math.ceil(availableResults / paginationOptions.take) : availableResults,
     data: {
       users: users,
     },
@@ -81,11 +81,145 @@ exports.getUser = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.createUser = catchAsync(async (req, res, next) => {});
+exports.createUser = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
 
-exports.updateUser = catchAsync(async (req, res, next) => {});
+  const checkEmail = await prisma.user.findUnique({
+    where: {
+      email: data.email,
+    },
+  });
 
-exports.deleteUser = catchAsync(async (req, res, next) => {});
+  if (checkEmail) {
+    return next(new AppError('Email already exists!', 401));
+  }
+
+  data.password = await bcrypt.hash(data.password, 12);
+
+  const roles = ['admin', 'author'];
+
+  if (!roles.includes(data.role)) {
+    return next(new AppError('Invalid role for this user!', 401));
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      role: data.role,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      photo: true,
+      role: true,
+    },
+  });
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      user: user,
+    },
+  });
+});
+
+exports.updateUser = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  const checkUser = await prisma.user.findUnique({
+    where: {
+      id: data.userId,
+    },
+  });
+
+  if (!checkUser) {
+    return next(new AppError('User not found!', 404));
+  }
+
+  if (!data.name && !data.email && !data.password && !data.role) {
+    return next(new AppError('Nothing to update!', 400));
+  }
+
+  const dataToUpdate = {};
+
+  if (data.name) dataToUpdate.name = data.name;
+  if (data.email) {
+    const checkEmail = await prisma.user.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (checkEmail) {
+      return next(new AppError('Email already exists!', 401));
+    }
+
+    dataToUpdate.email = data.email;
+  }
+  if (data.password) dataToUpdate.password = await bcrypt.hash(data.password, 12);
+  if (data.role) {
+    const roles = ['admin', 'author'];
+
+    if (!roles.includes(data.role)) {
+      return next(new AppError('Invalid role for this user!', 401));
+    }
+
+    dataToUpdate.role = data.role;
+  }
+  if (!(data.active === undefined)) dataToUpdate.isActive = data.active;
+
+  console.log(dataToUpdate);
+
+  const user = await prisma.user.update({
+    where: {
+      id: data.userId,
+    },
+    data: dataToUpdate,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      photo: true,
+      role: true,
+      isActive: true,
+    },
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      user: user,
+    },
+  });
+});
+
+exports.deleteUser = catchAsync(async (req, res, next) => {
+  const data = req.validatedData;
+
+  const checkUser = await prisma.user.findUnique({
+    where: {
+      id: data.userId,
+    },
+  });
+
+  if (!checkUser) {
+    return next(new AppError('User not found!', 404));
+  }
+
+  await prisma.user.delete({
+    where: {
+      id: data.userId,
+    },
+  });
+
+  res.status(204).json({
+    status: 'success',
+    message: 'User has been deleted!',
+  });
+});
 
 exports.getMe = (req, res) => {
   res.status(200).json({

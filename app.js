@@ -3,7 +3,6 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
 const hpp = require('hpp');
-const xss = require('xss-clean');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const compression = require('compression');
@@ -42,8 +41,6 @@ app.use(express.urlencoded({ limit: '10kb', extended: true }));
 app.use(cookieParser());
 
 app.use(hpp());
-
-app.use(xss());
 
 app.use(compression());
 
