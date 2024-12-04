@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
@@ -16,6 +17,8 @@ const app = express();
 
 app.use(cors());
 app.options('*', cors());
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(
   helmet({
